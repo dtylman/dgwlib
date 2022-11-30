@@ -1,4 +1,4 @@
-package main
+package dgwlib
 
 import (
 	"log"

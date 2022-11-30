@@ -1,5 +1,5 @@
 // go:generate go-bindata -o bindata.go template mapconfig
-package main
+package dgwlib
 
 import (
 	"bytes"
@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"fmt"
 	"go/format"
-	"io/ioutil"
 	"sort"
 	"strings"
 	"text/template"
@@ -36,18 +35,6 @@ func OpenDB(connStr string) (*sql.DB, error) {
 	}
 	return conn, nil
 }
-
-const queryInterface = `
-// Queryer database/sql compatible query interface
-type Queryer interface {
-	Exec(string, ...interface{}) (sql.Result, error)
-	Query(string, ...interface{}) (*sql.Rows, error)
-	QueryRow(string, ...interface{}) *sql.Row
-	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
-	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
-	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
-}
-`
 
 const pgLoadColumnDef = `
 SELECT
@@ -126,7 +113,8 @@ type PgTable struct {
 	Columns     []*PgColumn
 }
 
-var autoGenKeyCfg = &AutoKeyMap{
+// AutoGenKeyCfg ...
+var AutoGenKeyCfg = &AutoKeyMap{
 	Types: []string{"smallserial", "serial", "bigserial", "autogenuuid"},
 }
 
@@ -163,8 +151,8 @@ type Struct struct {
 	Fields  []*StructField
 }
 
-// StructTmpl go struct passed to template
-type StructTmpl struct {
+// StructTemplate go struct passed to template
+type StructTemplate struct {
 	Struct *Struct
 }
 
@@ -299,30 +287,8 @@ func PgTableToStruct(t *PgTable, typeCfg *PgTypeMapConfig, keyConfig *AutoKeyMap
 	return s, nil
 }
 
-// PgExecuteDefaultTmpl execute struct template with *Struct
-func PgExecuteDefaultTmpl(st *StructTmpl, path string) ([]byte, error) {
-	var src []byte
-	d, err := Asset(path)
-	if err != nil {
-		return src, errors.Wrap(err, "failed to load asset")
-	}
-	tpl, err := template.New("struct").Funcs(tmplFuncMap).Parse(string(d))
-	if err != nil {
-		return src, errors.Wrap(err, "failed to parse template")
-	}
-	buf := new(bytes.Buffer)
-	if err := tpl.Execute(buf, st); err != nil {
-		return src, errors.Wrap(err, fmt.Sprintf("failed to execute template:\n%s", src))
-	}
-	src, err = format.Source(buf.Bytes())
-	if err != nil {
-		return src, errors.Wrap(err, fmt.Sprintf("failed to format code:\n%s", src))
-	}
-	return src, nil
-}
-
-// PgExecuteCustomTmpl execute custom template
-func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
+// PgExecuteCustomTemplate execute custom template
+func PgExecuteCustomTemplate(st *StructTemplate, customTmpl string) ([]byte, error) {
 	var src []byte
 	tpl, err := template.New("struct").Funcs(tmplFuncMap).Parse(customTmpl)
 	if err != nil {
@@ -335,61 +301,6 @@ func PgExecuteCustomTmpl(st *StructTmpl, customTmpl string) ([]byte, error) {
 	src, err = format.Source(buf.Bytes())
 	if err != nil {
 		return src, errors.Wrap(err, fmt.Sprintf("failed to format code:\n%s", src))
-	}
-	return src, nil
-}
-
-// PgCreateStruct creates struct from given schema
-func PgCreateStruct(
-	db Queryer, schema, typeMapPath, pkgName, customTmpl string, exTbls []string) ([]byte, error) {
-	var src []byte
-	pkgDef := []byte(fmt.Sprintf("package %s\n\n", pkgName))
-	src = append(src, pkgDef...)
-
-	tbls, err := PgLoadTableDef(db, schema)
-	if err != nil {
-		return src, errors.Wrap(err, "faield to load table definitions")
-	}
-	cfg := &PgTypeMapConfig{}
-	if typeMapPath == "" {
-		if _, err := toml.Decode(typeMap, cfg); err != nil {
-			return src, errors.Wrap(err, "faield to read type map")
-		}
-	} else {
-		if _, err := toml.DecodeFile(typeMapPath, cfg); err != nil {
-			return src, errors.Wrap(err, fmt.Sprintf("failed to decode type map file %s", typeMapPath))
-		}
-	}
-	for _, tbl := range tbls {
-		if contains(tbl.Name, exTbls) {
-			continue
-		}
-		st, err := PgTableToStruct(tbl, cfg, autoGenKeyCfg)
-		if err != nil {
-			return src, errors.Wrap(err, "faield to convert table definition to struct")
-		}
-		if customTmpl != "" {
-			tmpl, err := ioutil.ReadFile(customTmpl)
-			if err != nil {
-				return nil, err
-			}
-			s, err := PgExecuteCustomTmpl(&StructTmpl{Struct: st}, string(tmpl))
-			if err != nil {
-				return nil, errors.Wrap(err, "PgExecuteCustomTmpl failed")
-			}
-			src = append(src, s...)
-		} else {
-			s, err := PgExecuteDefaultTmpl(&StructTmpl{Struct: st}, "template/struct.tmpl")
-			if err != nil {
-				return src, errors.Wrap(err, "faield to execute template")
-			}
-			m, err := PgExecuteDefaultTmpl(&StructTmpl{Struct: st}, "template/method.tmpl")
-			if err != nil {
-				return src, errors.Wrap(err, "faield to execute template")
-			}
-			src = append(src, s...)
-			src = append(src, m...)
-		}
 	}
 	return src, nil
 }

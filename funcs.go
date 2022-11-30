@@ -1,4 +1,4 @@
-package main
+package dgwlib
 
 import (
 	"fmt"
@@ -6,16 +6,17 @@ import (
 )
 
 var tmplFuncMap = template.FuncMap{
-	"createInsertSQL":            createInsertSQL,
-	"createInsertParams":         createInsertParams,
-	"createInsertScan":           createInsertScan,
-	"createSelectByPkSQL":        createSelectByPkSQL,
-	"createSelectByPkFuncParams": createSelectByPkFuncParams,
-	"createSelectByPkSQLParams":  createSelectByPkSQLParams,
-	"createSelectByPkScan":       createSelectByPkScan,
+	"createInsertSQL":            CreateInsertSQL,
+	"createInsertParams":         CreateInsertParams,
+	"createInsertScan":           CreateInsertScan,
+	"createSelectByPkSQL":        CreateSelectByPkSQL,
+	"createSelectByPkFuncParams": CreateSelectByPkFuncParams,
+	"createSelectByPkSQLParams":  CreateSelectByPkSQLParams,
+	"createSelectByPkScan":       CreateSelectByPkScan,
 }
 
-func createSelectByPkSQL(st *Struct) string {
+// CreateSelectByPkSQL ...
+func CreateSelectByPkSQL(st *Struct) string {
 	var sql string
 	var colNames []string
 	var pkNames []string
@@ -37,7 +38,8 @@ func createSelectByPkSQL(st *Struct) string {
 	return sql
 }
 
-func createSelectByPkScan(st *Struct) string {
+// CreateSelectByPkScan ...
+func CreateSelectByPkScan(st *Struct) string {
 	var s []string
 	for _, f := range st.Fields {
 		s = append(s, fmt.Sprintf("&r.%s", f.Name))
@@ -45,7 +47,8 @@ func createSelectByPkScan(st *Struct) string {
 	return flatten(s, ", ")
 }
 
-func createSelectByPkSQLParams(st *Struct) string {
+// CreateSelectByPkSQLParams ...
+func CreateSelectByPkSQLParams(st *Struct) string {
 	var fs []string
 	for i, f := range st.Fields {
 		if f.Column.IsPrimaryKey {
@@ -55,7 +58,8 @@ func createSelectByPkSQLParams(st *Struct) string {
 	return flatten(fs, ", ")
 }
 
-func createSelectByPkFuncParams(st *Struct) string {
+// CreateSelectByPkFuncParams ...
+func CreateSelectByPkFuncParams(st *Struct) string {
 	var fs []string
 	for i, f := range st.Fields {
 		if f.Column.IsPrimaryKey {
@@ -65,7 +69,8 @@ func createSelectByPkFuncParams(st *Struct) string {
 	return flatten(fs, ", ")
 }
 
-func createInsertScan(st *Struct) string {
+// CreateInsertScan ...
+func CreateInsertScan(st *Struct) string {
 	var fs []string
 	for _, f := range st.Fields {
 		if f.Column.IsPrimaryKey && st.Table.AutoGenPk {
@@ -75,7 +80,8 @@ func createInsertScan(st *Struct) string {
 	return flatten(fs, ", ")
 }
 
-func createInsertParams(st *Struct) string {
+// CreateInsertParams ...
+func CreateInsertParams(st *Struct) string {
 	var fs []string
 	for _, f := range st.Fields {
 		if f.Column.IsPrimaryKey && st.Table.AutoGenPk {
@@ -113,7 +119,8 @@ func placeholders(l []string) string {
 	return ph
 }
 
-func createInsertSQL(st *Struct) string {
+// CreateInsertSQL ...
+func CreateInsertSQL(st *Struct) string {
 	var sql string
 	sql = "INSERT INTO " + st.Table.Name + " ("
 
