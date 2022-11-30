@@ -6,10 +6,11 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-var defaultTypeMapCfg PgTypeMapConfig
+// DefaultTypeMapCfg ...
+var DefaultTypeMapCfg PgTypeMapConfig
 
 func init() {
-	if _, err := toml.Decode(typeMap, &defaultTypeMapCfg); err != nil {
+	if _, err := toml.Decode(typeMap, &DefaultTypeMapCfg); err != nil {
 		log.Fatal(err)
 	}
 }
