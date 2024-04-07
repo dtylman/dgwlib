@@ -1,96 +1,80 @@
 package dgwlib
 
-import (
-	"log"
-
-	"github.com/BurntSushi/toml"
-)
-
-// DefaultTypeMapCfg ...
-var DefaultTypeMapCfg PgTypeMapConfig
-
-func init() {
-	if _, err := toml.Decode(typeMap, &DefaultTypeMapCfg); err != nil {
-		log.Fatal(err)
-	}
+// DefaultTypeMapCfg is the default type map configuration
+var DefaultTypeMapCfg PgTypeMapConfig = PgTypeMapConfig{
+	"string": TypeMap{
+		DBTypes:        []string{"character", "character varying", "text", "money"},
+		NotNullGoType:  "string",
+		NullableGoType: "sql.NullString",
+	},
+	"time": TypeMap{
+		DBTypes:        []string{"time with time zone", "time without time zone", "timestamp without time zone", "timestamp with time zone", "date"},
+		NotNullGoType:  "time.Time",
+		NullableGoType: "sql.NullTime",
+	},
+	"bool": TypeMap{
+		DBTypes:        []string{"boolean"},
+		NotNullGoType:  "bool",
+		NullableGoType: "sql.NullBool",
+	},
+	"smallint": TypeMap{
+		DBTypes:        []string{"smallint"},
+		NotNullGoType:  "int16",
+		NullableGoType: "sql.NullInt64",
+	},
+	"integer": TypeMap{
+		DBTypes:        []string{"integer"},
+		NotNullGoType:  "int",
+		NullableGoType: "sql.NullInt64",
+	},
+	"bigint": TypeMap{
+		DBTypes:        []string{"bigint"},
+		NotNullGoType:  "int64",
+		NullableGoType: "sql.NullInt64",
+	},
+	"smallserial": TypeMap{
+		DBTypes:        []string{"smallserial"},
+		NotNullGoType:  "uint16",
+		NullableGoType: "sql.NullInt64",
+	},
+	"serial": TypeMap{
+		DBTypes:        []string{"serial"},
+		NotNullGoType:  "uint32",
+		NullableGoType: "sql.NullInt64",
+	},
+	"real": TypeMap{
+		DBTypes:        []string{"real"},
+		NotNullGoType:  "float32",
+		NullableGoType: "sql.NullFloat64",
+	},
+	"numeric": TypeMap{
+		DBTypes:        []string{"numeric", "double precision"},
+		NotNullGoType:  "float64",
+		NullableGoType: "sql.NullFloat64",
+	},
+	"bytea": TypeMap{
+		DBTypes:        []string{"bytea"},
+		NotNullGoType:  "[]byte",
+		NullableGoType: "[]byte",
+	},
+	"json": TypeMap{
+		DBTypes:        []string{"json", "jsonb"},
+		NotNullGoType:  "[]byte",
+		NullableGoType: "[]byte",
+	},
+	"xml": TypeMap{
+		DBTypes:        []string{"xml"},
+		NotNullGoType:  "[]byte",
+		NullableGoType: "[]byte",
+	},
+	"interval": TypeMap{
+		DBTypes:        []string{"interval"},
+		NotNullGoType:  "time.Duration",
+		NullableGoType: "*time.Duration",
+	},
+	"default": TypeMap{
+		DBTypes:        []string{"*"},
+		NotNullGoType:  "interface{}",
+		NullableGoType: "interface{}",
+	},
 }
-
-const typeMap = `
-[string]
-db_types = ["character", "character varying", "text", "money"]
-notnull_go_type = "string"
-nullable_go_type = "sql.NullString"
-
-[time]
-db_types = [
-    "time with time zone", "time without time zone",
-    "timestamp without time zone", "timestamp with time zone", "date"
-]
-notnull_go_type = "time.Time"
-nullable_go_type = "*time.Time"
-
-[bool]
-db_types = ["boolean"]
-notnull_go_type = "bool"
-nullable_go_type = "bool"
-
-[smallint]
-db_types = ["smallint"]
-notnull_go_type = "int16"
-nullable_go_type = "sql.NullInt64"
-
-[integer]
-db_types = ["integer"]
-notnull_go_type = "int"
-nullable_go_type = "sql.NullInt64"
-
-[bigint]
-db_types = ["bigint"]
-notnull_go_type = "int64"
-nullable_go_type = "sql.NullInt64"
-
-[smallserial]
-db_types = ["smallserial"]
-notnull_go_type = "uint16"
-nullable_go_type = "sql.NullInt64"
-
-[serial]
-db_types = ["serial"]
-notnull_go_type = "uint32"
-nullable_go_type = "sql.NullInt64"
-
-[real]
-db_types = ["real"]
-notnull_go_type = "float32"
-nullable_go_type = "sql.NullFloat64"
-
-[numeric]
-db_types = ["numeric", "double precision"]
-notnull_go_type = "float64"
-nullable_go_type = "sql.NullFloat64"
-
-[bytea]
-db_types = ["bytea"]
-notnull_go_type = "byte"
-nullable_go_type = "byte"
-
-[json]
-db_types = ["json", "jsonb"]
-notnull_go_type = "[]byte"
-nullable_go_type = "[]byte"
-
-[xml]
-db_types = ["xml"]
-notnull_go_type = "[]byte"
-nullable_go_type = "[]byte"
-
-[interval]
-db_types = ["interval"]
-notnull_go_type = "time.Duration"
-nullable_go_type = "*time.Duration"
-
-[default]
-db_types = ["*"]
-notnull_go_type = "interface{}"
-nullable_go_type = "interface{}"
-`
